@@ -6,27 +6,24 @@ import hlt.GameMap;
 import hlt.Log;
 import hlt.MapCell;
 import hlt.Player;
+import hlt.Position;
 import hlt.Ship;
+import mav.MavShip;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 
 public class MavBot {
-    public static void main(final String[] args) throws FileNotFoundException, UnsupportedEncodingException {
+    public static void main(final String[] args) {
         final long rngSeed;
         if (args.length > 1) {
             rngSeed = Integer.parseInt(args[1]);
         } else {
             rngSeed = System.nanoTime();
         }
-        final Random rng = new Random(rngSeed);
 
         Game game = new Game();
         // At this point "game" variable is populated with initial map data.
@@ -37,11 +34,12 @@ public class MavBot {
         // when to start moving towards drop off
         // collision distance and avoidance. 
         game.ready("MavBotV1");
-        init(game,rngSeed);
+        init(game);
 
         Log.log("Successfully created bot! My Player ID is " + game.myId + ". Bot rng seed is " + rngSeed + ".");
+        Map<Integer, MavShip> ships = new HashMap<>();
 
-        for (; ; ) {
+        do {
             game.updateFrame();
             final Player me = game.me;
             final GameMap gameMap = game.gameMap;
@@ -53,45 +51,62 @@ public class MavBot {
                         "Ship:" + ship.id + "\t Location : (" + ship.position.x + "," + ship.position.y + ")\t Halite:"
                                 + ship.halite;
                 Log.log(shipFo);
-                if (gameMap.at(ship).halite < Constants.MAX_HALITE / 10 || ship.isFull()) {
-                    final Direction randomDirection = Direction.ALL_CARDINALS.get(rng.nextInt(4));
-                    commandQueue.add(ship.move(randomDirection));
+                MavShip m;
+                if (ships.containsKey(ship.id.id)) {
+                    m=ships.get(ship.id.id);
+                    m.updateShip(ship,gameMap);
+                    ships.put(m.id.id,m);
                 } else {
-                    commandQueue.add(ship.stayStill());
+                    m = new MavShip(ship);
+                    m.updateShip(ship,gameMap);
+                    ships.put(m.id.id,m);
                 }
+
+                commandQueue.add(ship.move(game.turnNumber % 2 == 0 ? Direction.NORTH : Direction.EAST));
+//                if (gameMap.at(ship).halite < Constants.MAX_HALITE / 10 || ship.isFull()) {
+//                    final Direction randomDirection = Direction.NORTH;
+//                    commandQueue.add(ship.move(randomDirection));
+//                } else {
+//                    commandQueue.add(ship.stayStill());
+//                }
             }
 
-            if (game.turnNumber <= 200 && me.halite >= Constants.SHIP_COST && !gameMap.at(me.shipyard).isOccupied()) {
+            if (game.turnNumber <= 200 && me.halite >= Constants.SHIP_COST && !gameMap.at(me.shipyard).isOccupied()
+                    && game.turnNumber % 2 == 0) {
                 commandQueue.add(me.shipyard.spawn());
             }
 
             game.endTurn(commandQueue);
-        }
+        } while (game.turnNumber < Constants.MAX_TURNS);
+    }
+    private boolean canMove(Ship s,GameMap gameMap){
+        return s.halite > gameMap.at(s).halite/10;
     }
 
-    private static void init(Game game, long rngSeed){
+    private static void init(Game game) {
         outputConstants();
         outputBoard(game.gameMap.cells);
 
     }
 
+
     private static void outputConstants() {
-        Log.log("MAX_HALITE: "+Constants.MAX_HALITE);
-        Log.log("SHIP_COST: "+Constants.SHIP_COST);
-        Log.log("DROPOFF_COST: "+Constants.DROPOFF_COST);
-        Log.log("MAX_TURNS: "+Constants.MAX_TURNS);
-        Log.log("EXTRACT_RATIO: "+Constants.EXTRACT_RATIO);
-        Log.log("MOVE_COST_RATIO: "+Constants.MOVE_COST_RATIO);
-        Log.log("INSPIRATION_ENABLED: "+Constants.INSPIRATION_ENABLED);
-        Log.log("INSPIRATION_RADIUS: "+Constants.INSPIRATION_RADIUS);
-        Log.log("INSPIRATION_SHIP_COUNT: "+Constants.INSPIRATION_SHIP_COUNT);
-        Log.log("INSPIRED_EXTRACT_RATIO: "+Constants.INSPIRED_EXTRACT_RATIO);
-        Log.log("INSPIRED_BONUS_MULTIPLIER: "+Constants.INSPIRED_BONUS_MULTIPLIER);
-        Log.log("INSPIRED_MOVE_COST_RATIO: "+Constants.INSPIRED_MOVE_COST_RATIO);
+        Log.log("MAX_HALITE: " + Constants.MAX_HALITE);
+        Log.log("SHIP_COST: " + Constants.SHIP_COST);
+        Log.log("DROPOFF_COST: " + Constants.DROPOFF_COST);
+        Log.log("MAX_TURNS: " + Constants.MAX_TURNS);
+        Log.log("EXTRACT_RATIO: " + Constants.EXTRACT_RATIO);
+        Log.log("MOVE_COST_RATIO: " + Constants.MOVE_COST_RATIO);
+        Log.log("INSPIRATION_ENABLED: " + Constants.INSPIRATION_ENABLED);
+        Log.log("INSPIRATION_RADIUS: " + Constants.INSPIRATION_RADIUS);
+        Log.log("INSPIRATION_SHIP_COUNT: " + Constants.INSPIRATION_SHIP_COUNT);
+        Log.log("INSPIRED_EXTRACT_RATIO: " + Constants.INSPIRED_EXTRACT_RATIO);
+        Log.log("INSPIRED_BONUS_MULTIPLIER: " + Constants.INSPIRED_BONUS_MULTIPLIER);
+        Log.log("INSPIRED_MOVE_COST_RATIO: " + Constants.INSPIRED_MOVE_COST_RATIO);
     }
 
     private static void outputBoard(MapCell[][] map) {
-        Long tot = 0l;
+        long tot = 0L;
         int max = 0;
         int min = 64000;
         List<Integer> cells = new ArrayList<>();
@@ -124,11 +139,10 @@ public class MavBot {
             }
         }
 
-        int rq1 = cells.get((cells.size()-1)/4);
-        int rq2 = cells.get((cells.size()-1)/2);
-        int rq3 = cells.get(((cells.size()-1)*3)/4);
-        int rq4 = cells.get((cells.size()-1));
-
+        int rq1 = cells.get((cells.size() - 1) / 4);
+        int rq2 = cells.get((cells.size() - 1) / 2);
+        int rq3 = cells.get(((cells.size() - 1) * 3) / 4);
+        int rq4 = cells.get((cells.size() - 1));
 
         Log.log(rows.toString());
         Log.log("Total: " + tot);
@@ -136,7 +150,7 @@ public class MavBot {
         Log.log("AVG: " + tot / (map.length * map[0].length));
         Log.log("Dist Value  : \t<" + qSize + "\t<" + qSize * 2 + "\t<" + qSize * 3 + "\t<" + qSize * 4);
         Log.log("Distribution: \t" + q1 + "  \t" + q2 + "  \t" + q3 + "  \t" + q4);
-        Log.log("Quantiles: \tQ1:<"+rq1+"\tQ2:<"+rq2+"\tQ3:<"+rq3+"\tQ4:<"+rq4);
+        Log.log("Quantiles: \tQ1:<" + rq1 + "\tQ2:<" + rq2 + "\tQ3:<" + rq3 + "\tQ4:<" + rq4);
 
     }
 }

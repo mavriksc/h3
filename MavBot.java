@@ -135,7 +135,7 @@ public class MavBot {
         Log.log("MAX: " + max);
         Log.log("AVG: " + tot / (map.length * map[0].length));
         Log.log("Dist Value  : \t<" + qSize + "\t<" + qSize * 2 + "\t<" + qSize * 3 + "\t<" + qSize * 4);
-        Log.log("Distribution: \t" + q1 + "\t" + q2 + "\t" + q3 + "\t" + q4);
+        Log.log("Distribution: \t" + q1 + "  \t" + q2 + "  \t" + q3 + "  \t" + q4);
         Log.log("Quantiles: \tQ1:<"+rq1+"\tQ2:<"+rq2+"\tQ3:<"+rq3+"\tQ4:<"+rq4);
 
     }

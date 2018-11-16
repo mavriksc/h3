@@ -27,3 +27,13 @@ hs_err_pid*
 /.idea/workspace.xml
 /h3.iml
 /replays
+/out/production/h3/.gitignore
+/out/production/h3/README.md
+/out/production/h3/docs/api-docs.md
+/out/production/h3/docs/game-overview.md
+/out/production/h3/halite.exe
+/out/production/h3/replays/README.md
+/out/production/h3/replays/replay-20181115-214412-0600-1542339851-32-32.hlt
+/out/production/h3/replays/replay-20181115-214437-0600-1542339877-32-32.hlt
+/out/production/h3/run_game.bat
+/out/production/h3/run_game.sh

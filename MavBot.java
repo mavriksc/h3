@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class MavBot {
-    static String logFile;
     public static void main(final String[] args) throws FileNotFoundException, UnsupportedEncodingException {
         final long rngSeed;
         if (args.length > 1) {
@@ -48,8 +47,10 @@ public class MavBot {
             final ArrayList<Command> commandQueue = new ArrayList<>();
 
             for (final Ship ship : me.ships.values()) {
-                String shipFo = "Ship:" + ship.id + "\t Location : (" + ship.position.x + "," + ship.position.y+")\t Halite:"+ ship.halite;
-                log(shipFo);
+                String shipFo =
+                        "Ship:" + ship.id + "\t Location : (" + ship.position.x + "," + ship.position.y + ")\t Halite:"
+                                + ship.halite;
+                Log.log(shipFo);
                 if (gameMap.at(ship).halite < Constants.MAX_HALITE / 10 || ship.isFull()) {
                     final Direction randomDirection = Direction.ALL_CARDINALS.get(rng.nextInt(4));
                     commandQueue.add(ship.move(randomDirection));
@@ -58,39 +59,52 @@ public class MavBot {
                 }
             }
 
-            if (
-                    game.turnNumber <= 200 &&
-                            me.halite >= Constants.SHIP_COST &&
-                            !gameMap.at(me.shipyard).isOccupied()) {
+            if (game.turnNumber <= 200 && me.halite >= Constants.SHIP_COST && !gameMap.at(me.shipyard).isOccupied()) {
                 commandQueue.add(me.shipyard.spawn());
             }
 
             game.endTurn(commandQueue);
         }
     }
+
     private static void init(Game game, long rngSeed){
-        logFile="map-" + rngSeed + ".log";
+        outputConstants();
         outputBoard(game.gameMap.cells);
+
     }
 
-    private static void log(String s){
-        try {
-            PrintWriter log = new PrintWriter(new FileOutputStream(new File(logFile),true));
-            log.println(s);
-            log.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+    private static void outputConstants() {
+        Log.log("MAX_HALITE: "+Constants.MAX_HALITE);
+        Log.log("SHIP_COST: "+Constants.SHIP_COST);
+        Log.log("DROPOFF_COST: "+Constants.DROPOFF_COST);
+        Log.log("MAX_TURNS: "+Constants.MAX_TURNS);
+        Log.log("EXTRACT_RATIO: "+Constants.EXTRACT_RATIO);
+        Log.log("MOVE_COST_RATIO: "+Constants.MOVE_COST_RATIO);
+        Log.log("INSPIRATION_ENABLED: "+Constants.INSPIRATION_ENABLED);
+        Log.log("INSPIRATION_RADIUS: "+Constants.INSPIRATION_RADIUS);
+        Log.log("INSPIRATION_SHIP_COUNT: "+Constants.INSPIRATION_SHIP_COUNT);
+        Log.log("INSPIRED_EXTRACT_RATIO: "+Constants.INSPIRED_EXTRACT_RATIO);
+        Log.log("INSPIRED_BONUS_MULTIPLIER: "+Constants.INSPIRED_BONUS_MULTIPLIER);
+        Log.log("INSPIRED_MOVE_COST_RATIO: "+Constants.INSPIRED_MOVE_COST_RATIO);
     }
 
     private static void outputBoard(MapCell[][] map) {
+        Long tot = 0l;
+        int max = 0;
         StringBuilder rows = new StringBuilder();
-        for (MapCell[] aMap : map) {
-            for (MapCell anAMap : aMap) {
-                rows.append(anAMap.halite).append("\t");
+        for (MapCell[] row : map) {
+            for (MapCell cell : row) {
+                rows.append(cell.halite).append("\t");
+                tot+=cell.halite;
+                if (cell.halite>max)
+                    max = cell.halite;
             }
             rows.append("\n");
         }
-        log(rows.toString());
+        Log.log(rows.toString());
+        Log.log("Total: " + tot);
+        Log.log("MAX: " + max);
+        Log.log("AVG: " + tot / (map.length * map[0].length));
+
     }
 }

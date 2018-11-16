@@ -124,12 +124,19 @@ public class MavBot {
             }
         }
 
+        int rq1 = cells.get((cells.size()-1)/4);
+        int rq2 = cells.get((cells.size()-1)/2);
+        int rq3 = cells.get(((cells.size()-1)*3)/4);
+        int rq4 = cells.get((cells.size()-1));
+
+
         Log.log(rows.toString());
         Log.log("Total: " + tot);
         Log.log("MAX: " + max);
         Log.log("AVG: " + tot / (map.length * map[0].length));
-        Log.log("QUANTILE SIZE:\t<"+qSize+"\t<"+qSize*2+"\t<"+qSize*3+"\t<"+qSize*4);
-        Log.log("Distribution: \tQ1:" + q1 + "\tQ2:" + q2 + "\tQ3:" + q3 + "\tQ4:" + q4);
+        Log.log("Dist Value  : \t<" + qSize + "\t<" + qSize * 2 + "\t<" + qSize * 3 + "\t<" + qSize * 4);
+        Log.log("Distribution: \t" + q1 + "\t" + q2 + "\t" + q3 + "\t" + q4);
+        Log.log("Quantiles: \tQ1:<"+rq1+"\tQ2:<"+rq2+"\tQ3:<"+rq3+"\tQ4:<"+rq4);
 
     }
 }

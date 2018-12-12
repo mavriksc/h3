@@ -34,6 +34,15 @@ public class MavBot {
         // when to start moving towards drop off
         // collision distance and avoidance. 
         game.ready("MavBotV1");
+        Log.log("Turns to mine 900:\t" + turnsToMine(900));
+        Log.log("Turns to mine 600:\t" + turnsToMine(600));
+        Log.log("Turns to mine 300:\t" + turnsToMine(300));
+        Log.log("Turns to mine 100:\t" + turnsToMine(100));
+        Log.log("Turns to mine 60:\t" + turnsToMine(60));
+        Log.log("Turns to mine 30:\t" + turnsToMine(30));
+        Log.log("Turns to mine 10:\t" + turnsToMine(10));
+        Log.log("Turns to mine 6:\t" + turnsToMine(6));
+        Log.log("Turns to mine 3:\t" + turnsToMine(3));
         init(game);
 
         Log.log("Successfully created bot! My Player ID is " + game.myId + ". Bot rng seed is " + rngSeed + ".");
@@ -53,42 +62,44 @@ public class MavBot {
                 Log.log(shipFo);
                 MavShip m;
                 if (ships.containsKey(ship.id.id)) {
-                    m=ships.get(ship.id.id);
-                    m.updateShip(ship,gameMap);
-                    ships.put(m.id.id,m);
+                    m = ships.get(ship.id.id);
+                    m.updateShip(ship, gameMap);
+                    ships.put(m.id.id, m);
                 } else {
+                    Log.log("new ship created ID:" + ship.id.id);
                     m = new MavShip(ship);
-                    m.updateShip(ship,gameMap);
-                    ships.put(m.id.id,m);
+                    m.updateShip(ship, gameMap);
+                    ships.put(m.id.id, m);
                 }
 
-                commandQueue.add(ship.move(game.turnNumber % 2 == 0 ? Direction.NORTH : Direction.EAST));
-//                if (gameMap.at(ship).halite < Constants.MAX_HALITE / 10 || ship.isFull()) {
-//                    final Direction randomDirection = Direction.NORTH;
-//                    commandQueue.add(ship.move(randomDirection));
-//                } else {
-//                    commandQueue.add(ship.stayStill());
-//                }
+                commandQueue.add(ship.move(m.getShipDirection()));
             }
 
-            if (game.turnNumber <= 200 && me.halite >= Constants.SHIP_COST && !gameMap.at(me.shipyard).isOccupied()
-                    && game.turnNumber % 2 == 0) {
+            if (game.turnNumber <= 200 && me.halite >= Constants.SHIP_COST && !gameMap.at(me.shipyard).isOccupied()) {
                 commandQueue.add(me.shipyard.spawn());
             }
 
             game.endTurn(commandQueue);
         } while (game.turnNumber < Constants.MAX_TURNS);
     }
-    private boolean canMove(Ship s,GameMap gameMap){
-        return s.halite > gameMap.at(s).halite/10;
+
+    private boolean canMove(Ship s, GameMap gameMap) {
+        return s.halite > gameMap.at(s).halite / 10;
     }
 
     private static void init(Game game) {
         outputConstants();
         outputBoard(game.gameMap.cells);
-
     }
 
+    private static int turnsToMine(int halite) {
+        if (halite <= 0) {
+            return 0;
+        } else {
+            int getsMined = (int) Math.ceil((float) halite / Constants.EXTRACT_RATIO);
+            return 1 + turnsToMine(halite - getsMined);
+        }
+    }
 
     private static void outputConstants() {
         Log.log("MAX_HALITE: " + Constants.MAX_HALITE);
@@ -123,6 +134,17 @@ public class MavBot {
             }
             rows.append("\n");
         }
+        //Output turns to mine
+        rows.append("*****************\n");
+        rows.append("**Turns to mine**\n");
+        rows.append("*****************\n");
+        for (MapCell[] row : map) {
+            for (MapCell cell : row) {
+                rows.append(turnsToMine(cell.halite)).append("\t");
+            }
+            rows.append("\n");
+        }
+
         cells.sort(Comparator.naturalOrder());
         int range = max - min;
         int qSize = range / 4;
